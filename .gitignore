@@ -1,0 +1,17 @@
+# Dependencies & Build Outputs
+node_modules/
+frontend/dist/
+
+# Environment Secrets (never commit real .env files; keep only .env.example)
+.env
+.env.*
+!.env.example
+
+# Local Logo Uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs & OS Files
+*.log
+.DS_Store
+Thumbs.db
