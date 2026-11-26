@@ -84,7 +84,7 @@ app.use(
     },
     frameguard: { action: 'deny' },
     referrerPolicy: { policy: 'no-referrer' },
-    crossOriginResourcePolicy: { policy: 'same-site' },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
 

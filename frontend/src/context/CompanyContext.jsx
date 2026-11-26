@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { API_BASE } from '../api/client.js';
 import * as companyApi from '../api/companyApi.js';
 import { isSafeLogoSrc } from '../utils/inrFormat.js';
 import { useAuth } from './AuthContext.jsx';
@@ -25,7 +26,7 @@ function resolveSafeSlotSrc(dataUri, url, endpointPrefix, revision) {
   }
   if (isSafeLogoSrc(url)) {
     if (url.startsWith(endpointPrefix)) {
-      return `${url}?v=${revision}`;
+      return `${API_BASE}${url}?v=${revision}`;
     }
     return url;
   }

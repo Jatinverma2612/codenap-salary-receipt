@@ -1,4 +1,4 @@
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+export const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 // Kept strictly in module memory (never in localStorage or sessionStorage).
@@ -20,6 +20,24 @@ export function clearCsrfToken() {
   csrfTokenMemory = '';
 }
 
+function buildFallbackErrorMessage(status) {
+  if (status === 502 || status === 503 || status === 504 || status === 500) {
+    return `Unable to reach the backend API (HTTP ${status}). Verify the backend server is running and connected to MongoDB.`;
+  }
+  return `Request failed (HTTP ${status}).`;
+}
+
+async function performFetch(url, options) {
+  try {
+    return await fetch(url, options);
+  } catch {
+    throw new ApiClientError(
+      0,
+      'Cannot connect to the backend server. Please make sure the backend server is running.'
+    );
+  }
+}
+
 /**
  * Ensures a valid CSRF token and HttpOnly CSRF cookie exist before state-changing calls.
  */
@@ -28,14 +46,17 @@ export async function ensureCsrfToken(forceRefresh = false) {
     return csrfTokenMemory;
   }
 
-  const response = await fetch(`${API_BASE}/api/auth/csrf`, {
+  const response = await performFetch(`${API_BASE}/api/auth/csrf`, {
     method: 'GET',
     credentials: 'include',
   });
 
-  const payload = await response.json().catch(() => ({}));
+  const payload = await response.json().catch(() => null);
   if (!response.ok || !payload?.csrfToken) {
-    throw new ApiClientError(response.status, payload?.message || 'Could not initialize security token.');
+    throw new ApiClientError(
+      response.status,
+      payload?.message || buildFallbackErrorMessage(response.status)
+    );
   }
 
   setCsrfToken(payload.csrfToken);
@@ -64,14 +85,14 @@ export async function apiRequest(path, { method = 'GET', body, isFormData = fals
     }
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await performFetch(`${API_BASE}${path}`, {
     method: upperMethod,
     headers,
     body: requestBody,
     credentials: 'include',
   });
 
-  const payload = await response.json().catch(() => ({}));
+  const payload = await response.json().catch(() => null);
 
   if (payload?.csrfToken) {
     setCsrfToken(payload.csrfToken);
@@ -89,8 +110,11 @@ export async function apiRequest(path, { method = 'GET', body, isFormData = fals
   }
 
   if (!response.ok) {
-    throw new ApiClientError(response.status, payload?.message || 'Request failed.');
+    throw new ApiClientError(
+      response.status,
+      payload?.message || buildFallbackErrorMessage(response.status)
+    );
   }
 
-  return payload;
+  return payload || {};
 }

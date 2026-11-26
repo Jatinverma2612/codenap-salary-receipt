@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { API_BASE } from '../../api/client.js';
 import {
   formatINRNumber,
   formatINRWords,
@@ -93,9 +94,15 @@ export default function ReceiptPreview({
       activeSaved.logoSnapshot?.receiptLogoData ||
       activeSaved.logoSnapshot?.receiptLogoUrl ||
       '';
-    resolvedLogo = isSafeLogoSrc(snapshotCandidate) ? snapshotCandidate : '';
-  } else {
-    resolvedLogo = isSafeLogoSrc(receiptLogoSrc) ? receiptLogoSrc : '';
+    if (isSafeLogoSrc(snapshotCandidate)) {
+      resolvedLogo = snapshotCandidate.startsWith('/api/')
+        ? `${API_BASE}${snapshotCandidate}`
+        : snapshotCandidate;
+    }
+  } else if (isSafeLogoSrc(receiptLogoSrc)) {
+    resolvedLogo = receiptLogoSrc.startsWith('/api/')
+      ? `${API_BASE}${receiptLogoSrc}`
+      : receiptLogoSrc;
   }
 
   const [logoLoadFailed, setLogoLoadFailed] = useState(false);
